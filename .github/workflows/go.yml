@@ -41,16 +41,18 @@ jobs:
         response=$(curl -X POST http://localhost:8080/login \
           -H "Content-Type: application/json" \
           -d '{"username": "testuser", "password": "testpassword"}')
-        echo $response
-        export ACCESS_TOKEN=$(echo $response | jq -r '.access_token')
-        export REFRESH_TOKEN=$(echo $response | jq -r '.refresh_token')  # Added extraction of refresh_token
-        echo "Access Token: $ACCESS_TOKEN" >> $GITHUB_ENV
-        echo "Refresh Token: $REFRESH_TOKEN" >> $GITHUB_ENV
+        echo "Response: $response"
+        ACCESS_TOKEN=$(echo $response | jq -r '.access_token')
+        REFRESH_TOKEN=$(echo $response | jq -r '.refresh_token')
+        echo "Access Token: $ACCESS_TOKEN"
+        echo "Refresh Token: $REFRESH_TOKEN"
+        echo "ACCESS_TOKEN=$ACCESS_TOKEN" >> $GITHUB_ENV
+        echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV
 
     - name: Test echo
       run: |
-        echo "echoing token: $ACCESS_TOKEN"
-
+        echo "Echoing token: $ACCESS_TOKEN"
+    
     - name: Test profile endpoint
       run: |
         if [ -z "$ACCESS_TOKEN" ]; then
