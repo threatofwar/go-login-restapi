@@ -31,7 +31,10 @@ jobs:
       run: go build -v ./...
 
     - name: Run application
-      run: nohup go run main.go
+      run: |
+        nohup go run main.go > server.log 2>&1 &
+        echo $! > server.pid
+        sleep 5
 
     - name: Test login endpoint
       run: |
