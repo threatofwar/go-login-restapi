@@ -54,7 +54,7 @@ func createUserTable() {
 
 // Hash Password using Argon2
 func hashPassword(password string) string {
-	salt := []byte("somesalt") // You should use a unique salt for each user
+	salt := []byte("somesalt")
 	hashed := argon2.IDKey([]byte(password), salt, 1, 64*1024, 4, 32)
 	return fmt.Sprintf("%x", hashed)
 }
@@ -189,7 +189,7 @@ func refreshToken(c *gin.Context) {
 }
 
 func insertTestUser() {
-	hashedPassword := hashPassword("testpassword") // Hash a test password
+	hashedPassword := hashPassword("testpassword")
 	_, err := db.Exec(`INSERT INTO users (username, password) VALUES (?, ?)`, "testuser", hashedPassword)
 	if err != nil {
 		log.Fatal(err)
@@ -198,12 +198,12 @@ func insertTestUser() {
 }
 
 func main() {
-	// Initialize and create table
+	// Initialize, create table, & insert test user
 	initDB()
 	createUserTable()
 	insertTestUser()
 
-	// Setup router and routes
+	// Router and routes
 	r := gin.Default()
 
 	r.POST("/login", login)
