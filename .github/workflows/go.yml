@@ -47,8 +47,8 @@ jobs:
         echo "Access Token: $ACCESS_TOKEN"
         echo "Refresh Token: $REFRESH_TOKEN"
 
-    name: Test echo
-    run: echo "echoing token: $ACCESS_TOKEN"
+    - name: Test echo
+      run: echo "echoing token: $ACCESS_TOKEN"
 
     - name: Test profile endpoint
       run: |
