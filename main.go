@@ -95,9 +95,18 @@ func generateRefreshToken(username string) (string, error) {
 // Middleware to validate JWT Token
 func authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenString := c.GetHeader("Authorization")
+		authorizationHeader := c.GetHeader("Authorization")
+
+		if len(authorizationHeader) < 7 || authorizationHeader[:7] != "Bearer " {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Authorization header must start with 'Bearer '"})
+			c.Abort()
+			return
+		}
+
+		tokenString := authorizationHeader[7:]
+
 		if tokenString == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "Authorization header is required"})
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Token is required"})
 			c.Abort()
 			return
 		}

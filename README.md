@@ -24,13 +24,13 @@ curl -X POST http://localhost:8080/login \
 ```
 ### Accessing profile with access token
 ```bash
-curl -X GET http://localhost:8080/auth/profile -H "Authorization: <access_token>"
+curl -X GET http://localhost:8080/auth/profile -H "Authorization: Bearer <access_token>"
 ```
 ### Refresh token
 ```bash
-curl -X POST http://localhost:8080/refresh-token -H "Content-Type: application/json" -d '{"refresh_token": "<access_token>"}'
+curl -X POST http://localhost:8080/refresh-token -H "Content-Type: application/json" -d '{"refresh_token": "<refresh_token>"}'
 ```
 ### Accessing profile with new access token
 ```bash
-curl -X GET http://localhost:8080/auth/profile -H "Authorization: <access_token>"
+curl -X GET http://localhost:8080/auth/profile -H "Authorization: Bearer <access_token>"
 ```
