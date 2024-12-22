@@ -16,6 +16,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Access directory
+      run: cd go-login-restapi
+
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
