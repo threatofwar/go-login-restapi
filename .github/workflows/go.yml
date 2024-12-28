@@ -38,7 +38,7 @@ jobs:
 
     - name: Test login endpoint
       run: |
-        response=$(curl -X POST http://localhost:8080/login \
+        response=$(curl -X POST http://localhost:8080/api/login \
           -H "Content-Type: application/json" \
           -d '{"username": "user", "password": "123"}')
         echo "Response: $response"
@@ -56,7 +56,7 @@ jobs:
           echo "Access token is empty. Login failed."
           exit 1
         fi
-        profile_response=$(curl -X GET http://localhost:8080/auth/profile \
+        profile_response=$(curl -X GET http://localhost:8080/api/auth/profile \
           -H "Authorization: Bearer $ACCESS_TOKEN")
         echo $profile_response
 
@@ -66,7 +66,7 @@ jobs:
           echo "Refresh token is empty. Login failed."
           exit 1
         fi
-        refresh_response=$(curl -X POST http://localhost:8080/refresh-token \
+        refresh_response=$(curl -X POST http://localhost:8080/api/refresh-token \
           -H "Content-Type: application/json" \
           -d '{"refresh_token": "'$REFRESH_TOKEN'"}')
         echo "Refresh Response: $refresh_response"
@@ -80,7 +80,7 @@ jobs:
           echo "New Access token is empty. Refresh failed."
           exit 1
         fi
-        profile_response=$(curl -X GET http://localhost:8080/auth/profile \
+        profile_response=$(curl -X GET http://localhost:8080/api/auth/profile \
           -H "Authorization: Bearer $NEW_ACCESS_TOKEN")
         echo $profile_response
 
