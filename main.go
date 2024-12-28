@@ -193,8 +193,8 @@ func login(c *gin.Context) {
 
 	// Return response with tokens (optional: maybe to add for mobile access)
 	c.JSON(http.StatusOK, gin.H{
-		// "access_token":  token,
-		// "refresh_token": refreshToken,
+		"access_token":  token,
+		"refresh_token": refreshToken,
 	})
 }
 
