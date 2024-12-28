@@ -92,40 +92,6 @@ func generateRefreshToken(username string) (string, error) {
 	return token.SignedString(refreshSecretKey)
 }
 
-// Middleware to validate JWT Token
-// func authMiddleware() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		authorizationHeader := c.GetHeader("Authorization")
-
-// 		if len(authorizationHeader) < 7 || authorizationHeader[:7] != "Bearer " {
-// 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Authorization header must start with 'Bearer '"})
-// 			c.Abort()
-// 			return
-// 		}
-
-// 		tokenString := authorizationHeader[7:]
-
-// 		if tokenString == "" {
-// 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Token is required"})
-// 			c.Abort()
-// 			return
-// 		}
-
-// 		token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-// 			return jwtSecretKey, nil
-// 		})
-
-// 		if err != nil || !token.Valid {
-// 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid token"})
-// 			c.Abort()
-// 			return
-// 		}
-
-// 		c.Set("username", token.Claims.(*Claims).Username)
-// 		c.Next()
-// 	}
-// }
-
 func authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		accessToken, err := c.Cookie("access_token")
@@ -183,12 +149,12 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// Set cookies with SameSite attribute
-	c.SetCookie("access_token", token, 3600, "/", ".shibidi.war", true, true)
-	c.SetCookie("refresh_token", refreshToken, 10*24*3600, "/", ".shibidi.war", true, true)
+	// Set cookies (gin)
+	c.SetCookie("access_token", token, 3600, "/", "ddapp.shibidi.war", true, true)
+	c.SetCookie("refresh_token", refreshToken, 10*24*3600, "/", "ddapp.shibidi.war", true, true)
 
-	// Manually add SameSite attribute to the cookies
-	// c.Header("Set-Cookie", "access_token="+token+"; Max-Age=3600; Path=/; Domain=api.shibidi.war; Secure; HttpOnly; SameSite=None")
+	// if manually set cookies
+	// c.Header("Set-Cookie", "access_token="+token+"; Max-Age=3600; Path=/; Domain=.shibidi.war; Secure; HttpOnly; SameSite=None")
 	// c.Header("Set-Cookie", "refresh_token="+refreshToken+"; Max-Age=604800; Path=/; Domain=api.shibidi.war; Secure; HttpOnly; SameSite=None")
 
 	// Return response with tokens (optional: maybe to add for mobile access)
@@ -197,38 +163,6 @@ func login(c *gin.Context) {
 		"refresh_token": refreshToken,
 	})
 }
-
-// Refresh token handler
-// func refreshToken(c *gin.Context) {
-// 	var request struct {
-// 		RefreshToken string `json:"refresh_token"`
-// 	}
-
-// 	if err := c.ShouldBindJSON(&request); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request"})
-// 		return
-// 	}
-
-// 	token, err := jwt.ParseWithClaims(request.RefreshToken, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-// 		return refreshSecretKey, nil
-// 	})
-
-// 	if err != nil || !token.Valid {
-// 		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid refresh token"})
-// 		return
-// 	}
-
-// 	claims := token.Claims.(*Claims)
-// 	newAccessToken, err := generateJWTToken(claims.Username)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create new access token"})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, gin.H{
-// 		"access_token": newAccessToken,
-// 	})
-// }
 
 func refreshToken(c *gin.Context) {
 	refreshToken, err := c.Cookie("refresh_token")
