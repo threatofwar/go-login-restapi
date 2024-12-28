@@ -20,7 +20,7 @@ go run main.go
 ```bash
 curl -X POST http://localhost:8080/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "testuser", "password": "testpassword"}'
+  -d '{"username": "user", "password": "123"}'
 ```
 ### Accessing profile with access token
 ```bash

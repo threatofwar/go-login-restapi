@@ -1,7 +1,6 @@
 package main
 
 import (
-	"golang.org/x/crypto/argon2"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,8 +8,9 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/crypto/argon2"
 )
 
 // Database setup
@@ -93,25 +93,49 @@ func generateRefreshToken(username string) (string, error) {
 }
 
 // Middleware to validate JWT Token
+// func authMiddleware() gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		authorizationHeader := c.GetHeader("Authorization")
+
+// 		if len(authorizationHeader) < 7 || authorizationHeader[:7] != "Bearer " {
+// 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Authorization header must start with 'Bearer '"})
+// 			c.Abort()
+// 			return
+// 		}
+
+// 		tokenString := authorizationHeader[7:]
+
+// 		if tokenString == "" {
+// 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Token is required"})
+// 			c.Abort()
+// 			return
+// 		}
+
+// 		token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+// 			return jwtSecretKey, nil
+// 		})
+
+// 		if err != nil || !token.Valid {
+// 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid token"})
+// 			c.Abort()
+// 			return
+// 		}
+
+// 		c.Set("username", token.Claims.(*Claims).Username)
+// 		c.Next()
+// 	}
+// }
+
 func authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authorizationHeader := c.GetHeader("Authorization")
-
-		if len(authorizationHeader) < 7 || authorizationHeader[:7] != "Bearer " {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "Authorization header must start with 'Bearer '"})
+		accessToken, err := c.Cookie("access_token")
+		if err != nil || accessToken == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Access token is required"})
 			c.Abort()
 			return
 		}
 
-		tokenString := authorizationHeader[7:]
-
-		if tokenString == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "Token is required"})
-			c.Abort()
-			return
-		}
-
-		token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(accessToken, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 			return jwtSecretKey, nil
 		})
 
@@ -159,24 +183,61 @@ func login(c *gin.Context) {
 		return
 	}
 
+	// Set cookies with SameSite attribute
+	c.SetCookie("access_token", token, 3600, "/", ".shibidi.war", true, true)
+	c.SetCookie("refresh_token", refreshToken, 10*24*3600, "/", ".shibidi.war", true, true)
+
+	// Manually add SameSite attribute to the cookies
+	// c.Header("Set-Cookie", "access_token="+token+"; Max-Age=3600; Path=/; Domain=api.shibidi.war; Secure; HttpOnly; SameSite=None")
+	// c.Header("Set-Cookie", "refresh_token="+refreshToken+"; Max-Age=604800; Path=/; Domain=api.shibidi.war; Secure; HttpOnly; SameSite=None")
+
+	// Return response with tokens (optional: maybe to add for mobile access)
 	c.JSON(http.StatusOK, gin.H{
-		"access_token":  token,
-		"refresh_token": refreshToken,
+		// "access_token":  token,
+		// "refresh_token": refreshToken,
 	})
 }
 
 // Refresh token handler
-func refreshToken(c *gin.Context) {
-	var request struct {
-		RefreshToken string `json:"refresh_token"`
-	}
+// func refreshToken(c *gin.Context) {
+// 	var request struct {
+// 		RefreshToken string `json:"refresh_token"`
+// 	}
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request"})
+// 	if err := c.ShouldBindJSON(&request); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request"})
+// 		return
+// 	}
+
+// 	token, err := jwt.ParseWithClaims(request.RefreshToken, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+// 		return refreshSecretKey, nil
+// 	})
+
+// 	if err != nil || !token.Valid {
+// 		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid refresh token"})
+// 		return
+// 	}
+
+// 	claims := token.Claims.(*Claims)
+// 	newAccessToken, err := generateJWTToken(claims.Username)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create new access token"})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{
+// 		"access_token": newAccessToken,
+// 	})
+// }
+
+func refreshToken(c *gin.Context) {
+	refreshToken, err := c.Cookie("refresh_token")
+	if err != nil || refreshToken == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Refresh token is required"})
 		return
 	}
 
-	token, err := jwt.ParseWithClaims(request.RefreshToken, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(refreshToken, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return refreshSecretKey, nil
 	})
 
@@ -192,22 +253,35 @@ func refreshToken(c *gin.Context) {
 		return
 	}
 
+	// Set new access token in cookies
+	c.SetCookie("access_token", newAccessToken, 3600, "/", "", false, true) // 1 hour expiry, HttpOnly
+
 	c.JSON(http.StatusOK, gin.H{
 		"access_token": newAccessToken,
 	})
 }
 
 func insertTestUser() {
-	hashedPassword := hashPassword("testpassword")
-	_, err := db.Exec(`INSERT INTO users (username, password) VALUES (?, ?)`, "testuser", hashedPassword)
+	var count int
+	err := db.Get(&count, "SELECT COUNT(*) FROM users WHERE username = ?", "user")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error checking for existing user: %v", err)
 	}
-	fmt.Println("Test user inserted")
+
+	// Insert the user only if they don't already exist
+	if count == 0 {
+		hashedPassword := hashPassword("123")
+		_, err := db.Exec(`INSERT INTO users (username, password) VALUES (?, ?)`, "user", hashedPassword)
+		if err != nil {
+			log.Fatalf("Error inserting test user: %v", err)
+		}
+		fmt.Println("Test user inserted")
+	} else {
+		fmt.Println("Test user already exists")
+	}
 }
 
 func main() {
-	// Initialize, create table, & insert test user
 	initDB()
 	createUserTable()
 	insertTestUser()
@@ -215,11 +289,14 @@ func main() {
 	// Router and routes
 	r := gin.Default()
 
-	r.POST("/login", login)
-	r.POST("/refresh-token", refreshToken)
+	r.GET("/api/hello", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "Hello, world!"})
+	})
+	r.POST("/api/login", login)
+	r.POST("/api/refresh-token", refreshToken)
 
 	// Authenticated routes
-	auth := r.Group("/auth", authMiddleware())
+	auth := r.Group("/api/auth", authMiddleware())
 	auth.GET("/profile", func(c *gin.Context) {
 		username, _ := c.Get("username")
 		c.JSON(http.StatusOK, gin.H{"username": username})
@@ -227,4 +304,3 @@ func main() {
 
 	r.Run(":8080")
 }
-
