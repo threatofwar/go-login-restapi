@@ -40,7 +40,7 @@ jobs:
       run: |
         response=$(curl -X POST http://localhost:8080/login \
           -H "Content-Type: application/json" \
-          -d '{"username": "testuser", "password": "testpassword"}')
+          -d '{"username": "user", "password": "123"}')
         echo "Response: $response"
         ACCESS_TOKEN=$(echo $response | jq -r '.access_token')
         REFRESH_TOKEN=$(echo $response | jq -r '.refresh_token')
