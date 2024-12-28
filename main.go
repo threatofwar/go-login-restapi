@@ -150,8 +150,8 @@ func login(c *gin.Context) {
 	}
 
 	// Set cookies (gin)
-	c.SetCookie("access_token", token, 3600, "/", "ddapp.shibidi.war", true, true)
-	c.SetCookie("refresh_token", refreshToken, 10*24*3600, "/", "ddapp.shibidi.war", true, true)
+	c.SetCookie("access_token", token, 3600, "/", "app.shibidi.war", true, true)
+	c.SetCookie("refresh_token", refreshToken, 10*24*3600, "/", "app.shibidi.war", true, true)
 
 	// if manually set cookies
 	// c.Header("Set-Cookie", "access_token="+token+"; Max-Age=3600; Path=/; Domain=.shibidi.war; Secure; HttpOnly; SameSite=None")
