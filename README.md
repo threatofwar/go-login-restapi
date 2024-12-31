@@ -34,3 +34,9 @@ curl -X POST http://localhost:8080/refresh-token -H "Content-Type: application/j
 ```bash
 curl -X GET http://localhost:8080/auth/profile -H "Authorization: Bearer <access_token>"
 ```
+### Register new users
+```bash
+curl -X POST http://localhost:8080/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "user1","password": "123","emails": ["user1@user","user1@email","user1@whatisthis"]}'
+```

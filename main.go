@@ -27,15 +27,15 @@ func main() {
 	router := gin.Default()
 
 	// routes without auth
-	router.GET("/api/hello", func(c *gin.Context) {
+	router.GET("/hello", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "Hello, world!"})
 	})
-	router.POST("/api/login", auth.Login)
-	router.POST("/api/refresh-token", auth.RefreshToken)
-	router.POST("/api/register", auth.Register)
+	router.POST("/login", auth.Login)
+	router.POST("/refresh-token", auth.RefreshToken)
+	router.POST("/register", auth.Register)
 
 	// routes with auth
-	authGroup := router.Group("/api/auth", auth.AuthMiddleware())
+	authGroup := router.Group("/auth", auth.AuthMiddleware())
 	// authGroup.GET("/profile", func(c *gin.Context) {
 	// 	username, _ := c.Get("username")
 	// 	c.JSON(http.StatusOK, gin.H{"username": username})
