@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"go-login-restapi/auth"
 	"go-login-restapi/pkg/db"
@@ -59,5 +60,10 @@ func main() {
 		})
 	})
 
-	router.Run(":8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	router.Run(":" + port)
 }
