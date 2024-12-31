@@ -1,5 +1,4 @@
 /.vscode/
-go.sum
 user.db
 *.log
 .env
