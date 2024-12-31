@@ -1,5 +1,4 @@
 /.vscode/
-go.mod
 go.sum
 user.db
 *.log
