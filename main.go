@@ -21,8 +21,7 @@ func main() {
 
 	// Initialize database
 	db.InitDB()
-	db.CreateUserTable()
-	db.CreateEmailsTable()
+	db.CreateTables()
 	models.InsertTestUser()
 	models.InsertTestUserEmail()
 
@@ -34,6 +33,7 @@ func main() {
 	})
 	router.POST("/api/login", auth.Login)
 	router.POST("/api/refresh-token", auth.RefreshToken)
+	router.POST("/api/register", auth.Register)
 
 	// routes with auth
 	authGroup := router.Group("/api/auth", auth.AuthMiddleware())

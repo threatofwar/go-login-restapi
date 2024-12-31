@@ -2,19 +2,12 @@ package db
 
 import (
 	"log"
-
-	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
 )
 
-var DB *sqlx.DB
-
-func InitDB() {
-	var err error
-	DB, err = sqlx.Connect("sqlite3", "./user.db")
-	if err != nil {
-		log.Fatal(err)
-	}
+func CreateTables() {
+	CreateUserTable()
+	CreateEmailsTable()
+	log.Println("All tables have been created or already exist.")
 }
 
 func CreateUserTable() {
@@ -26,6 +19,7 @@ func CreateUserTable() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("User table created or already exists.")
 }
 
 func CreateEmailsTable() {
@@ -38,4 +32,5 @@ func CreateEmailsTable() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("Emails table created or already exists.")
 }

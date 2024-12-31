@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"go-login-restapi/hash"
 	"go-login-restapi/pkg/db"
@@ -60,6 +61,24 @@ func InsertTestUserEmail() {
 			fmt.Printf("Email %s already exists\n", email)
 		}
 	}
+}
+
+func (u *User) Save() error {
+	query := `INSERT INTO users (username, password) VALUES (?, ?)`
+
+	result, err := db.DB.Exec(query, u.Username, u.Password)
+	if err != nil {
+		return err
+	}
+
+	// mostlikely wont encounter this error
+	lastInsertID, err := result.LastInsertId()
+	if err != nil {
+		return errors.New("unable to retrieve last inserted ID")
+	}
+
+	u.ID = int(lastInsertID)
+	return nil
 }
 
 func GetUserWithEmails(username string) (*User, error) {
