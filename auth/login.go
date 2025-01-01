@@ -6,11 +6,14 @@ import (
 	"go-login-restapi/pkg/db/models"
 	"go-login-restapi/token"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
+
+var SERVER_FQDN = []byte(os.Getenv("SERVER_FQDN"))
 
 func Login(c *gin.Context) {
 	var req struct {
@@ -69,8 +72,8 @@ func Login(c *gin.Context) {
 			"refresh_token": refreshToken,
 		})
 	} else {
-		c.SetCookie("access_token", accessToken, 3600, "/", "api.shibidi.war", true, true)
-		c.SetCookie("refresh_token", refreshToken, 10*24*3600, "/", "api.shibidi.war", true, true)
+		c.SetCookie("access_token", accessToken, 3600, "/", SERVER_FQDN, true, true)
+		c.SetCookie("refresh_token", refreshToken, 10*24*3600, "/", SERVER_FQDN, true, true)
 
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Logged in successfully!",
@@ -116,7 +119,7 @@ func RefreshToken(c *gin.Context) {
 			"access_token": accessToken,
 		})
 	} else {
-		c.SetCookie("access_token", accessToken, 3600, "/", "api.shibidi.war", true, true)
+		c.SetCookie("access_token", accessToken, 3600, "/", SERVER_FQDN, true, true)
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Access token refreshed success!",
 			// "access_token": accessToken,
