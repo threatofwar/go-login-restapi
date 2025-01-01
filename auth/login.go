@@ -140,20 +140,22 @@ func isEmail(input string) bool {
 func IsAuthenticated(w http.ResponseWriter, r *http.Request) {
 	// Get the token from cookies
 	cookie, err := r.Cookie("access_token")
+	if err != nil || cookie.Value == "" {
+		// If no cookie found or the token is empty, respond with an unauthorized status
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Validate the JWT token
+	claims, err := token.ValidateJWTToken(cookie.Value)
 	if err != nil {
-		// If no cookie found, respond with an unauthorized status
+		// If token validation fails, respond with an unauthorized status
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	// For simplicity, assume a valid token is non-empty
-	if cookie.Value == "" {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	// If the token exists and is valid (basic check), return a success response
+	// If token is valid, respond with authentication success
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`{"authenticated": true}`))
+	w.Write([]byte(`{"authenticated": true, "username": "` + claims.Username + `"}`))
 }
