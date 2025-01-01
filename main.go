@@ -49,6 +49,7 @@ func main() {
 	router.POST("/login", auth.Login)
 	router.POST("/refresh-token", auth.RefreshToken)
 	router.POST("/register", auth.Register)
+	router.GET("/authenticated", auth.IsAuthenticated)
 
 	// routes with auth
 	authGroup := router.Group("/auth", auth.AuthMiddleware())

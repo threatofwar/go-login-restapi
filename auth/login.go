@@ -136,3 +136,24 @@ func isEmail(input string) bool {
 	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	return re.MatchString(input)
 }
+
+func IsAuthenticated(w http.ResponseWriter, r *http.Request) {
+	// Get the token from cookies
+	cookie, err := r.Cookie("access_token")
+	if err != nil {
+		// If no cookie found, respond with an unauthorized status
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// For simplicity, assume a valid token is non-empty
+	if cookie.Value == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// If the token exists and is valid (basic check), return a success response
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"authenticated": true}`))
+}
