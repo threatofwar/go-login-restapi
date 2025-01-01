@@ -147,7 +147,7 @@ func IsAuthenticated(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate the JWT token
-	claims, err := token.ValidateJWTToken(cookie.Value)
+	claims, err := token.ValidateToken(cookie.Value)
 	if err != nil {
 		// If token validation fails, respond with an unauthorized status
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
