@@ -8,6 +8,7 @@ import (
 	"go-login-restapi/pkg/db"
 	"go-login-restapi/pkg/db/models"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,6 +18,7 @@ func main() {
 	// if err != nil {
 	// 	log.Fatal("Error loading .env file")
 	// }
+	var ALLOWORIGINS_URL = []byte(os.Getenv("ALLOWORIGINS_URL"))
 
 	// Initialize database
 	db.InitDB()
@@ -25,6 +27,16 @@ func main() {
 	models.InsertTestUserEmail()
 
 	router := gin.Default()
+
+	// CORS config
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{ALLOWORIGINS_URL},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Content-Type", "Authorization"},
+		ExposeHeaders:    []string{},
+		AllowCredentials: true,
+		MaxAge:           12 * 3600,
+	}))
 
 	// routes without auth
 	router.GET("/hello", func(c *gin.Context) {
