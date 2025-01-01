@@ -13,7 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var SERVER_FQDN = []byte(os.Getenv("SERVER_FQDN"))
+var SERVER_FQDN = os.Getenv("SERVER_FQDN")
 
 func Login(c *gin.Context) {
 	var req struct {
