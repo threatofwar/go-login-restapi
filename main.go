@@ -49,7 +49,10 @@ func main() {
 	router.POST("/login", auth.Login)
 	router.POST("/refresh-token", auth.RefreshToken)
 	router.POST("/register", auth.Register)
-	router.GET("/authenticated", auth.IsAuthenticated)
+	router.GET("/authenticated", func(c *gin.Context) {
+		// Wrap the original IsAuthenticated handler with Gin context
+		auth.IsAuthenticated(c.Writer, c.Request)
+	})
 
 	// routes with auth
 	authGroup := router.Group("/auth", auth.AuthMiddleware())
