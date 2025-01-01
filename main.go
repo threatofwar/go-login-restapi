@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"os"
+	"strings"
 
 	"go-login-restapi/auth"
 	"go-login-restapi/pkg/db"
@@ -18,7 +19,10 @@ func main() {
 	// if err != nil {
 	// 	log.Fatal("Error loading .env file")
 	// }
-	var ALLOWORIGINS_URL = []byte(os.Getenv("ALLOWORIGINS_URL"))
+	ALLOWORIGINS_URL := os.Getenv("ALLOWORIGINS_URL")
+
+	// If you need to support multiple origins, split by commas
+	allowedOrigins := strings.Split(ALLOWORIGINS_URL, ",")
 
 	// Initialize database
 	db.InitDB()
@@ -30,7 +34,7 @@ func main() {
 
 	// CORS config
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{ALLOWORIGINS_URL},
+		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		ExposeHeaders:    []string{},
