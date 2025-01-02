@@ -19,41 +19,34 @@ func Register(c *gin.Context) {
 		Emails   []string `json:"emails" binding:"required"`
 	}
 
-	// Bind JSON input to the struct
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	// Check if the username already exists
 	if userExists(input.Username) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Username already taken"})
 		return
 	}
 
-	// Hash the password before saving it
 	hashedPassword := hash.HashPassword(input.Password)
 
-	// Create the user object
 	user := models.User{
 		Username: input.Username,
 		Password: hashedPassword,
 	}
 
-	// Save the user to the database
 	if err := user.Save(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to register user"})
 		return
 	}
 
-	// After the user is created, register the emails
 	for _, email := range input.Emails {
 		emailObj := models.Email{
-			UserID: user.ID, // Assign the created user ID
+			UserID: user.ID,
 			Email:  email,
 		}
 
-		// Save each email to the database
 		if err := emailObj.Save(); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to register email"})
 			return
@@ -63,7 +56,6 @@ func Register(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully with emails"})
 }
 
-// userExists checks if the username already exists in the database
 func userExists(username string) bool {
 	var count int
 	err := db.DB.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&count)

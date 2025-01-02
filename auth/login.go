@@ -9,6 +9,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -72,8 +73,32 @@ func Login(c *gin.Context) {
 			"refresh_token": refreshToken,
 		})
 	} else {
-		c.SetCookie("access_token", accessToken, 3600, "/", SERVER_FQDN, true, true)
-		c.SetCookie("refresh_token", refreshToken, 10*24*3600, "/", SERVER_FQDN, true, true)
+		// gin set cookies
+		// c.SetCookie("access_token", accessToken, 3600, "/", SERVER_FQDN, true, true)
+		// c.SetCookie("refresh_token", refreshToken, 10*24*3600, "/", SERVER_FQDN, true, true)
+
+		// manually set cookies
+		http.SetCookie(c.Writer, &http.Cookie{
+			Name:     "access_token",
+			Value:    accessToken,
+			Path:     "/",
+			Domain:   SERVER_FQDN,
+			Expires:  time.Now().Add(3600 * time.Second),
+			Secure:   true,
+			HttpOnly: true,
+			SameSite: http.SameSiteNoneMode,
+		})
+
+		http.SetCookie(c.Writer, &http.Cookie{
+			Name:     "refresh_token",
+			Value:    refreshToken,
+			Path:     "/",
+			Domain:   SERVER_FQDN,
+			Expires:  time.Now().Add(10 * 24 * time.Hour),
+			Secure:   true,
+			HttpOnly: true,
+			SameSite: http.SameSiteNoneMode,
+		})
 
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Logged in successfully!",
@@ -141,20 +166,17 @@ func IsAuthenticated(w http.ResponseWriter, r *http.Request) {
 	// Get the token from cookies
 	cookie, err := r.Cookie("access_token")
 	if err != nil || cookie.Value == "" {
-		// If no cookie found or the token is empty, respond with an unauthorized status
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	// Validate the JWT token
+	// validate token
 	claims, err := token.ValidateToken(cookie.Value)
 	if err != nil {
-		// If token validation fails, respond with an unauthorized status
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	// If token is valid, respond with authentication success
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"authenticated": true, "username": "` + claims.Username + `"}`))

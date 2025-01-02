@@ -20,8 +20,6 @@ func main() {
 	// 	log.Fatal("Error loading .env file")
 	// }
 	ALLOWORIGINS_URL := os.Getenv("ALLOWORIGINS_URL")
-
-	// If you need to support multiple origins, split by commas
 	allowedOrigins := strings.Split(ALLOWORIGINS_URL, ",")
 
 	// Initialize database
@@ -50,7 +48,6 @@ func main() {
 	router.POST("/refresh-token", auth.RefreshToken)
 	router.POST("/register", auth.Register)
 	router.GET("/authenticated", func(c *gin.Context) {
-		// Wrap the original IsAuthenticated handler with Gin context
 		auth.IsAuthenticated(c.Writer, c.Request)
 	})
 
@@ -61,17 +58,14 @@ func main() {
 	// 	c.JSON(http.StatusOK, gin.H{"username": username})
 	// })
 	authGroup.GET("/profile", func(c *gin.Context) {
-		// Get the username from the context (you may need to replace this with your actual method of getting the username)
 		username, _ := c.Get("username")
 
-		// Retrieve the user with their emails
-		user, err := models.GetUserWithEmails(username.(string)) // Assuming username is a string
+		user, err := models.GetUserWithEmails(username.(string))
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not fetch user profile"})
 			return
 		}
 
-		// Respond with the user's profile (including their emails)
 		c.JSON(http.StatusOK, gin.H{
 			"username": user.Username,
 			"emails":   user.Emails,
