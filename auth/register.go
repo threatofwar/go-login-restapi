@@ -7,6 +7,7 @@ import (
 	"go-login-restapi/hash"
 	"go-login-restapi/pkg/db"
 	"go-login-restapi/pkg/db/models"
+	"go-login-restapi/token"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,6 +42,9 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	var err error
+	var verificationToken string
+
 	for _, email := range input.Emails {
 		emailObj := models.Email{
 			UserID: user.ID,
@@ -51,9 +55,19 @@ func Register(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to register email"})
 			return
 		}
+
+		// Generate a verification token for the email
+		verificationToken, err = token.GenerateVerificationToken(user.Username, email)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate verification token"})
+			return
+		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully with emails"})
+	c.JSON(http.StatusOK, gin.H{
+		"message":            "User registered successfully with emails",
+		"verification_token": verificationToken,
+	})
 }
 
 func userExists(username string) bool {

@@ -27,6 +27,8 @@ func CreateEmailsTable() {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER NOT NULL,
 		email TEXT NOT NULL UNIQUE,
+		verified BOOLEAN DEFAULT FALSE,
+		verification_token TEXT,
 		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 	)`)
 	if err != nil {
