@@ -34,7 +34,12 @@ jobs:
       run: |
         nohup go run main.go > server.log 2>&1 &
         echo $! > server.pid
-        sleep 5
+        echo "Waiting for the server to start..."
+        until curl -s http://localhost:8080/api/login; do
+          echo "Server not ready yet, waiting 5 seconds..."
+          sleep 5
+        done
+        echo "Server is up and running."
 
     - name: Test login endpoint
       run: |
