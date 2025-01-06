@@ -154,7 +154,7 @@ func RefreshToken(c *gin.Context) {
 
 func isMobileUserAgent(c *gin.Context) bool {
 	userAgent := c.GetHeader("User-Agent")
-	return strings.Contains(userAgent, "Mobile") || strings.Contains(userAgent, "iPhone") || strings.Contains(userAgent, "Android")
+	return strings.Contains(userAgent, "ShibidiMobileApp/1")
 }
 
 func isEmail(input string) bool {
