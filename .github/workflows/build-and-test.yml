@@ -20,16 +20,6 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.23'
-    
-    - name: Cache Go Modules
-      uses: actions/cache@v2
-      with:
-        path: |
-          ${{ runner.os }}-go-mod-${{ hashFiles('**/go.mod') }}
-          $GOPATH/pkg/mod
-        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.mod') }}
-        restore-keys: |
-          ${{ runner.os }}-go-mod-
 
     - name: Init
       run: go mod init threatofwar/go-login-restapi
