@@ -31,7 +31,7 @@ func main() {
 
 	router := gin.Default()
 
-	CORS config
+	// CORS config
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"GET", "HEAD", "OPTIONS", "POST", "PUT", "DELETE"},
