@@ -46,12 +46,12 @@ jobs:
 
     - name: Test login endpoint
       run: |
-        response=$(curl -X POST http://localhost:8080/login \
+        RESPONSE=$(curl -X POST http://localhost:8080/login \
           -H "Content-Type: application/json" \
           -d '{"username": "user", "password": "123"}')
-        echo "Response: $response"
-        ACCESS_TOKEN=$(echo $response | jq -r '.access_token')
-        REFRESH_TOKEN=$(echo $response | jq -r '.refresh_token')
+        echo "Response: $RESPONSE"
+        ACCESS_TOKEN=$(echo $RESPONSE | jq -r '.access_token')
+        REFRESH_TOKEN=$(echo $RESPONSE | jq -r '.refresh_token')
         echo "Access Token: $ACCESS_TOKEN"
         echo "Refresh Token: $REFRESH_TOKEN"
         echo "ACCESS_TOKEN=$ACCESS_TOKEN" >> $GITHUB_ENV
@@ -64,9 +64,9 @@ jobs:
           echo "Access token is empty. Login failed."
           exit 1
         fi
-        profile_response=$(curl -X GET http://localhost:8080/auth/profile \
+        PROFILE_RESPONSE=$(curl -X GET http://localhost:8080/auth/profile \
           -H "Authorization: Bearer $ACCESS_TOKEN")
-        echo $profile_response
+        echo $PROFILE_RESPONSE
 
     - name: Test refresh token endpoint
       run: |
@@ -74,11 +74,11 @@ jobs:
           echo "Refresh token is empty. Login failed."
           exit 1
         fi
-        refresh_response=$(curl -X POST http://localhost:8080/refresh-token \
+        REFRESH_RESPONSE=$(curl -X POST http://localhost:8080/refresh-token \
           -H "Content-Type: application/json" \
           -d '{"refresh_token": "'$REFRESH_TOKEN'"}')
-        echo "Refresh Response: $refresh_response"
-        NEW_ACCESS_TOKEN=$(echo $refresh_response | jq -r '.access_token')
+        echo "Refresh Response: $REFRESH_RESPONSE"
+        NEW_ACCESS_TOKEN=$(echo $REFRESH_RESPONSE | jq -r '.access_token')
         echo "NEW_ACCESS_TOKEN=$NEW_ACCESS_TOKEN"
         echo "NEW_ACCESS_TOKEN=$NEW_ACCESS_TOKEN" >> $GITHUB_ENV
 
@@ -88,23 +88,52 @@ jobs:
           echo "New Access token is empty. Refresh failed."
           exit 1
         fi
-        profile_response=$(curl -X GET http://localhost:8080/auth/profile \
+        PROFILE_RESPONSE=$(curl -X GET http://localhost:8080/auth/profile \
           -H "Authorization: Bearer $NEW_ACCESS_TOKEN")
-        echo $profile_response
+        echo $PROFILE_RESPONSE
 
     - name: Test login endpoint with User-Agent (MobileApp)
       run: |
-        response=$(curl -X POST http://localhost:8080/login \
+        RESPONSE=$(curl -X POST http://localhost:8080/login \
           -H "Content-Type: application/json" \
           -H "User-Agent: $HEADER_USERAGENT_KEY" \
           -d '{"username": "user", "password": "123"}')
-        echo "Response: $response"
-        ACCESS_TOKEN=$(echo $response | jq -r '.access_token')
-        REFRESH_TOKEN=$(echo $response | jq -r '.refresh_token')
+        echo "Response: $RESPONSE"
+        ACCESS_TOKEN=$(echo $RESPONSE | jq -r '.access_token')
+        REFRESH_TOKEN=$(echo $RESPONSE | jq -r '.refresh_token')
         echo "Access Token: $ACCESS_TOKEN"
         echo "Refresh Token: $REFRESH_TOKEN"
         echo "ACCESS_TOKEN=$ACCESS_TOKEN" >> $GITHUB_ENV
         echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV
+    
+    - name: Test registration and email verification
+      run: |
+        REGISTRATION_RESPONSE=$(curl -s -X POST http://localhost:8080/register \
+          -H "Content-Type: application/json" \
+          -d '{"username": "user1","password": "123","emails": ["user1@user","user1@email","user1@whatisthis"]}')
+        echo "Registration Response: $REGISTRATION_RESPONSE"
+
+        VERIFICATION_TOKEN=$(echo "$REGISTRATION_RESPONSE" | jq -r '.verification_token')
+        echo "Verification Token: $VERIFICATION_TOKEN"
+
+        if echo "$REGISTRATION_RESPONSE" | grep -q "User registered successfully with emails"; then
+          echo "Registration test passed."
+        else
+          echo "Registration test failed."
+          exit 1
+        fi
+
+        VERIFY_RESPONSE=$(curl -s -X POST http://localhost:8080/verify-email \
+          -H "Content-Type: application/json" \
+          -d "{\"verification_token\": \"$VERIFICATION_TOKEN\"}")
+        echo "Verify Response: $VERIFY_RESPONSE"
+
+        if echo "$VERIFY_RESPONSE" | grep -q "Email verification successful"; then
+          echo "Email verification test passed."
+        else
+          echo "Email verification test failed."
+          exit 1
+        fi
 
     - name: Test
       run: |
