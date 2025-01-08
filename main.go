@@ -1,16 +1,16 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"go-login-restapi/auth"
 	"go-login-restapi/pkg/db"
 	"go-login-restapi/pkg/db/models"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -31,7 +31,7 @@ func main() {
 
 	router := gin.Default()
 
-	CORS config
+	// CORS config
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"GET", "HEAD", "OPTIONS", "POST", "PUT", "DELETE"},
