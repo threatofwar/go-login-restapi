@@ -106,15 +106,16 @@ jobs:
         echo "ACCESS_TOKEN=$ACCESS_TOKEN" >> $GITHUB_ENV
         echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV
     
-    - name: Test Registration
+    - name: Test registration and email verification
       run: |
-        BASE_URL="http://localhost:8080"
-        REGISTRATION_RESPONSE=$(curl -s -X POST $BASE_URL/register \
+        REGISTRATION_RESPONSE=$(curl -s -X POST http://localhost:8080/register \
           -H "Content-Type: application/json" \
           -d '{"username": "user1","password": "123","emails": ["user1@user","user1@email","user1@whatisthis"]}')
-        echo "Response: $REGISTRATION_RESPONSE"
+        echo "Registration Response: $REGISTRATION_RESPONSE"
+
         VERIFICATION_TOKEN=$(echo "$REGISTRATION_RESPONSE" | jq -r '.verification_token')
-          echo "Verification Token: $VERIFICATION_TOKEN"
+        echo "Verification Token: $VERIFICATION_TOKEN"
+
         if echo "$REGISTRATION_RESPONSE" | grep -q "User registered successfully with emails"; then
           echo "Registration test passed."
         else
@@ -122,13 +123,11 @@ jobs:
           exit 1
         fi
 
-    - name: Test Email Verification
-      run: |
-        BASE_URL="http://localhost:8080"
-        VERIFY_RESPONSE=$(curl -s -X POST $BASE_URL/verify-email \
+        VERIFY_RESPONSE=$(curl -s -X POST http://localhost:8080/verify-email \
           -H "Content-Type: application/json" \
           -d "{\"verification_token\": \"$VERIFICATION_TOKEN\"}")
         echo "Verify Response: $VERIFY_RESPONSE"
+
         if echo "$VERIFY_RESPONSE" | grep -q "Email verification successful"; then
           echo "Email verification test passed."
         else
