@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"go-login-restapi/auth"
+	"go-login-restapi/handlers"
 	"go-login-restapi/pkg/db"
 	"go-login-restapi/pkg/db/models"
 
@@ -45,11 +46,17 @@ func main() {
 	router.GET("/hello", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "Hello, world!"})
 	})
+	// authentication route
 	router.POST("/login", auth.Login)
 	router.POST("/refresh-token", auth.RefreshToken)
 	router.GET("/authenticated", func(c *gin.Context) {
 		auth.IsAuthenticated(c.Writer, c.Request)
 	})
+
+	// register new user route
+	router.POST("/register", auth.Register)
+	router.POST("/generate-verification-token", handlers.GenerateVerificationTokenHandler)
+	router.POST("/verify-email", handlers.VerifyEmailHandler)
 
 	// routes with auth
 	authGroup := router.Group("/auth", auth.AuthMiddleware())
