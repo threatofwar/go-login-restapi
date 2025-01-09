@@ -14,7 +14,9 @@ func CreateUserTable() {
 	_, err := DB.Exec(`CREATE TABLE IF NOT EXISTS users (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		username TEXT NOT NULL UNIQUE,
-		password TEXT NOT NULL
+		password TEXT NOT NULL,
+		password_reset_token TEXT,
+		password_reset_token_used BOOLEAN DEFAULT FALSE
 	)`)
 	if err != nil {
 		log.Fatal(err)

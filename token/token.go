@@ -2,8 +2,11 @@ package token
 
 import (
 	"errors"
+	"go-login-restapi/pkg/db/models"
 	"os"
 	"time"
+
+	"github.com/gofrs/uuid"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -16,6 +19,7 @@ var resetSecretKey = []byte(os.Getenv("RESET_SECRET_KEY"))
 type Claims struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
+	Used     bool   `json:"used"`
 	jwt.StandardClaims
 }
 
@@ -69,6 +73,9 @@ func ValidateRefreshToken(tokenString string) (*Claims, error) {
 
 // Email verification token
 func GenerateVerificationToken(username, email string) (string, error) {
+	// Generate a unique token ID
+	tokenID := uuid.Must(uuid.NewV4()).String()
+
 	expirationTime := time.Now().Add(1 * time.Hour) // Token valid for 1 hour
 	claims := &Claims{
 		Username: username,
@@ -76,10 +83,24 @@ func GenerateVerificationToken(username, email string) (string, error) {
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 			Issuer:    "threatofwar-email-verification",
+			Id:        tokenID, // Unique token identifier
 		},
 	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(emailVerificationSecretKey)
+
+	// Generate the signed token string
+	signedToken, err := token.SignedString([]byte(emailVerificationSecretKey))
+	if err != nil {
+		return "", err
+	}
+
+	// Store the verification token in the database
+	if err := models.StoreVerificationToken(email, signedToken); err != nil {
+		return "", err
+	}
+
+	return signedToken, nil
 }
 
 func ValidateVerificationToken(tokenString string) (*Claims, error) {
@@ -97,6 +118,7 @@ func GenerateResetToken(username string) (string, error) {
 	expirationTime := time.Now().Add(1 * time.Hour) // Token valid for 1 hour
 	claims := &Claims{
 		Username: username,
+		Used:     false,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 			Issuer:    "threatofwar-reset",
@@ -117,6 +139,10 @@ func ValidateResetToken(tokenString string) (string, error) {
 	claims, ok := token.Claims.(*Claims)
 	if !ok {
 		return "", errors.New("could not parse token claims")
+	}
+
+	if claims.Used {
+		return "", errors.New("token has already been used")
 	}
 
 	return claims.Username, nil

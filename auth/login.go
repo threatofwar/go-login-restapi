@@ -17,6 +17,7 @@ import (
 var COOKIES_FQDN = os.Getenv("COOKIES_FQDN")
 var HEADER_USERAGENT_KEY string
 
+// login with username or email
 func Login(c *gin.Context) {
 	var req struct {
 		Username string `json:"username"`
@@ -29,6 +30,7 @@ func Login(c *gin.Context) {
 
 	var user models.User
 
+	// checking for username or email format
 	isEmail := strings.Contains(req.Username, "@")
 
 	if isEmail {
@@ -51,23 +53,27 @@ func Login(c *gin.Context) {
 		}
 	}
 
+	// password checking
 	if !hash.VerifyPassword(user.Password, req.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username/email or password"})
 		return
 	}
 
+	// generate access_token
 	accessToken, err := token.GenerateJWTToken(user.Username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate access token"})
 		return
 	}
 
+	// generate refresh_token
 	refreshToken, err := token.GenerateRefreshToken(user.Username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate refresh token"})
 		return
 	}
 
+	// for mobile output
 	if isMobileUserAgent(c) {
 		c.JSON(http.StatusOK, gin.H{
 			"access_token":  accessToken,
@@ -107,12 +113,15 @@ func Login(c *gin.Context) {
 	}
 }
 
+// refresh_token to generate new access_token
 func RefreshToken(c *gin.Context) {
 	var refreshToken string
 
+	// check for refresh_token from cookies
 	if cookieToken, err := c.Cookie("refresh_token"); err == nil && cookieToken != "" {
 		refreshToken = cookieToken
 	} else {
+		// If refresh_token is not found in the cookies, check for refresh_token from body
 		var req struct {
 			RefreshToken string `json:"refresh_token"`
 		}
@@ -123,28 +132,33 @@ func RefreshToken(c *gin.Context) {
 		refreshToken = req.RefreshToken
 	}
 
+	// validate refresh_token
 	claims, err := token.ValidateRefreshToken(refreshToken)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
 		return
 	}
 
+	// check refresh_token issuer
 	if claims.Issuer != "threatofwar-auth-refresh" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token issuer"})
 		return
 	}
 
+	// generate new access_token
 	accessToken, err := token.GenerateJWTToken(claims.Username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create new access token"})
 		return
 	}
 
+	// for mobile output
 	if isMobileUserAgent(c) {
 		c.JSON(http.StatusOK, gin.H{
 			"access_token": accessToken,
 		})
 	} else {
+		// store access_token in cookies
 		c.SetCookie("access_token", accessToken, 3600, "/", COOKIES_FQDN, true, true)
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Access token refreshed success!",
@@ -153,17 +167,20 @@ func RefreshToken(c *gin.Context) {
 	}
 }
 
+// header check for mobileapp
 func isMobileUserAgent(c *gin.Context) bool {
 	HEADER_USERAGENT_KEY = os.Getenv("HEADER_USERAGENT_KEY")
 	userAgent := c.GetHeader("User-Agent")
 	return strings.Contains(userAgent, HEADER_USERAGENT_KEY)
 }
 
+// checking for email format
 func isEmail(input string) bool {
 	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	return re.MatchString(input)
 }
 
+// login/authenticate access_token via cookies
 func IsAuthenticated(w http.ResponseWriter, r *http.Request) {
 	// Get the token from cookies
 	cookie, err := r.Cookie("access_token")

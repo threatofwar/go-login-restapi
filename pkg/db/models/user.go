@@ -9,10 +9,12 @@ import (
 )
 
 type User struct {
-	ID       int      `db:"id"`
-	Username string   `db:"username"`
-	Password string   `db:"password"`
-	Emails   []string `db:"-"` // maybe not needed
+	ID                     int     `db:"id"`
+	Username               string  `db:"username"`
+	Password               string  `db:"password"`
+	PasswordResetToken     *string `db:"password_reset_token"`
+	PasswordResetTokenUsed bool    `db:"password_reset_token_used"`
+	Emails                 []Email `db:"-"` // maybe not needed
 }
 
 func InsertTestUser() {
@@ -81,17 +83,20 @@ func (u *User) Save() error {
 	return nil
 }
 
-func GetUserWithEmails(username string) (*User, error) {
+func GetUser(username string, withEmails bool) (*User, error) {
 	var user User
-	err := db.DB.Get(&user, "SELECT id, username, password FROM users WHERE username = ?", username)
+	err := db.DB.Get(&user, "SELECT id, username, password, password_reset_token, password_reset_token_used FROM users WHERE username = ?", username)
 	if err != nil {
 		return nil, err
 	}
 
-	// Retrieve the user's emails
-	err = db.DB.Select(&user.Emails, "SELECT email FROM emails WHERE user_id = ?", user.ID)
-	if err != nil {
-		return nil, err
+	if withEmails {
+		var emails []Email
+		err = db.DB.Select(&emails, "SELECT id, user_id, email, verified, verification_token FROM emails WHERE user_id = ?", user.ID)
+		if err != nil {
+			return nil, err
+		}
+		user.Emails = emails
 	}
 
 	return &user, nil
