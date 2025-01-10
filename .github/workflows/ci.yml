@@ -105,35 +105,36 @@ jobs:
         echo "Refresh Token: $REFRESH_TOKEN"
         echo "ACCESS_TOKEN=$ACCESS_TOKEN" >> $GITHUB_ENV
         echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV
-    
+
     - name: Test registration and email verification
       run: |
         REGISTRATION_RESPONSE=$(curl -s -X POST http://localhost:8080/register \
           -H "Content-Type: application/json" \
           -d '{"username": "user1","password": "123","emails": ["user1@user","user1@email","user1@whatisthis"]}')
         echo "Registration Response: $REGISTRATION_RESPONSE"
-
-        VERIFICATION_TOKEN=$(echo "$REGISTRATION_RESPONSE" | jq -r '.verification_token')
-        echo "Verification Token: $VERIFICATION_TOKEN"
-
         if echo "$REGISTRATION_RESPONSE" | grep -q "User registered successfully with emails"; then
           echo "Registration test passed."
         else
           echo "Registration test failed."
           exit 1
         fi
-
-        VERIFY_RESPONSE=$(curl -s -X POST http://localhost:8080/verify-email \
-          -H "Content-Type: application/json" \
-          -d "{\"verification_token\": \"$VERIFICATION_TOKEN\"}")
-        echo "Verify Response: $VERIFY_RESPONSE"
-
-        if echo "$VERIFY_RESPONSE" | grep -q "Email verification successful"; then
-          echo "Email verification test passed."
-        else
-          echo "Email verification test failed."
-          exit 1
-        fi
+        EMAILS=$(echo "$REGISTRATION_RESPONSE" | jq -c '.emails[]')
+        echo "Extracted Emails and Tokens: $EMAILS"
+        echo "$EMAILS" | while read -r EMAIL_DATA; do
+          EMAIL=$(echo "$EMAIL_DATA" | jq -r '.email')
+          VERIFICATION_TOKEN=$(echo "$EMAIL_DATA" | jq -r '.verification_token')
+          echo "Verifying email: $EMAIL with token: $VERIFICATION_TOKEN"
+          VERIFY_RESPONSE=$(curl -s -X POST http://localhost:8080/verify-email \
+            -H "Content-Type: application/json" \
+            -d "{\"verification_token\": \"$VERIFICATION_TOKEN\"}")
+          echo "Verify Response for $EMAIL: $VERIFY_RESPONSE"
+          if echo "$VERIFY_RESPONSE" | grep -q "Email verification successful"; then
+            echo "Email verification for $EMAIL passed."
+          else
+            echo "Email verification for $EMAIL failed."
+            exit 1
+          fi
+        done
 
     - name: Test
       run: |
