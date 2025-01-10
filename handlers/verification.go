@@ -38,18 +38,39 @@ func VerifyEmailHandler(c *gin.Context) {
 		return
 	}
 
+	// Validate the token
 	claims, err := token.ValidateVerificationToken(request.Token)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid verification token"})
 		return
 	}
 
+	// Fetch the email from the database by the verification token and email
+	email, err := models.GetEmailByToken(request.Token, claims.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve email with token"})
+		return
+	}
+
+	if email.Verified {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email has already been verified"})
+		return
+	}
+
+	// If no email is found or the token does not match, return an error
+	if email == nil || (email.VerificationToken != nil && *email.VerificationToken != request.Token) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired verification token"})
+		return
+	}
+
+	// Update the email verification status
 	err = models.UpdateEmailVerificationStatus(claims.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update email verification status"})
 		return
 	}
 
+	// Return success message
 	c.JSON(http.StatusOK, gin.H{
 		"message":  "Email verification successful",
 		"email":    claims.Email,

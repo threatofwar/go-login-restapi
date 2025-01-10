@@ -58,20 +58,43 @@ func main() {
 	router.POST("/generate-verification-token", handlers.GenerateVerificationTokenHandler)
 	router.POST("/verify-email", handlers.VerifyEmailHandler)
 
+	// password reset routes
+	router.POST("/forgot-password", handlers.ForgotPasswordHandler)
+	router.POST("/reset-password", handlers.ResetPasswordHandler)
+
 	// routes with auth
 	authGroup := router.Group("/auth", auth.AuthMiddleware())
 	authGroup.GET("/profile", func(c *gin.Context) {
-		username, _ := c.Get("username")
+		username, exists := c.Get("username")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+			return
+		}
 
-		user, err := models.GetUserWithEmails(username.(string))
+		user, err := models.GetUser(username.(string), true)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not fetch user profile"})
 			return
 		}
 
+		emailDetails := []gin.H{}
+		for _, email := range user.Emails {
+			emailDetails = append(emailDetails, gin.H{
+				"id":                 email.ID,
+				"user_id":            email.UserID,
+				"email":              email.Email,
+				"verified":           email.Verified,
+				"verification_token": email.VerificationToken,
+			})
+		}
+
 		c.JSON(http.StatusOK, gin.H{
-			"username": user.Username,
-			"emails":   user.Emails,
+			"id":                        user.ID,
+			"username":                  user.Username,
+			"password":                  user.Password,
+			"password_reset_token":      user.PasswordResetToken,
+			"password_reset_token_used": user.PasswordResetTokenUsed,
+			"emails":                    emailDetails,
 		})
 	})
 

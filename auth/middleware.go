@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// handles token authentication
+// middleware to check authenticated; used for protected routes
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var accessToken string

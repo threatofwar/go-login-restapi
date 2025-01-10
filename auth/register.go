@@ -25,6 +25,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// check if the username exists.
 	if userExists(input.Username) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Username already taken"})
 		return
@@ -32,11 +33,13 @@ func Register(c *gin.Context) {
 
 	hashedPassword := hash.HashPassword(input.Password)
 
+	// create user object
 	user := models.User{
 		Username: input.Username,
 		Password: hashedPassword,
 	}
 
+	// store user object to db
 	if err := user.Save(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to register user"})
 		return
@@ -44,32 +47,42 @@ func Register(c *gin.Context) {
 
 	var err error
 	var verificationToken string
+	var emailVerificationTokens []map[string]string
 
+	// create user object; user->hasMany->emails
 	for _, email := range input.Emails {
 		emailObj := models.Email{
 			UserID: user.ID,
 			Email:  email,
 		}
 
+		// store email
 		if err := emailObj.Save(); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to register email"})
 			return
 		}
 
-		// Generate a verification token for the email
+		// generate a verification token for the email
 		verificationToken, err = token.GenerateVerificationToken(user.Username, email)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate verification token"})
 			return
 		}
+
+		emailVerificationTokens = append(emailVerificationTokens, map[string]string{
+			"email":              email,
+			"verification_token": verificationToken,
+		})
 	}
 
+	// output
 	c.JSON(http.StatusOK, gin.H{
-		"message":            "User registered successfully with emails",
-		"verification_token": verificationToken,
+		"message": "User registered successfully with emails",
+		"emails":  emailVerificationTokens,
 	})
 }
 
+// check if user exists
 func userExists(username string) bool {
 	var count int
 	err := db.DB.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&count)
