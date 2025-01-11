@@ -36,7 +36,7 @@ func ResetPasswordHandler(c *gin.Context) {
 		return
 	}
 
-	// Ensure reset token exists in DB and matches the requested token
+	// check password_reset_token exists, validate password_reset_token is the same
 	if user.PasswordResetToken == nil || *user.PasswordResetToken != req.Token {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid reset token"})
 		return
@@ -49,14 +49,12 @@ func ResetPasswordHandler(c *gin.Context) {
 
 	hashedPassword := hash.HashPassword(req.NewPassword)
 
-	// Update new password
 	_, err = db.DB.Exec("UPDATE users SET password = ? WHERE username = ?", hashedPassword, username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not reset password"})
 		return
 	}
 
-	// Mark the password reset token as used by updating the 'password_reset_token_used' field
 	_, err = db.DB.Exec("UPDATE users SET password_reset_token_used = TRUE WHERE username = ?", username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not mark token as used"})

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"go-login-restapi/hash"
@@ -15,6 +16,17 @@ type User struct {
 	PasswordResetToken     *string `db:"password_reset_token"`
 	PasswordResetTokenUsed bool    `db:"password_reset_token_used"`
 	Emails                 []Email `db:"-"` // maybe not needed
+}
+
+func FindUserByID(userID int) (User, error) {
+	var user User
+	err := db.DB.Get(&user, "SELECT id, username, password FROM users WHERE id = ?", userID)
+	return user, err
+}
+
+func StorePasswordResetToken(userID int, resetToken string) error {
+	_, err := db.DB.Exec("UPDATE users SET password_reset_token = ?, password_reset_token_used = FALSE WHERE id = ?", resetToken, userID)
+	return err
 }
 
 func InsertTestUser() {
@@ -65,15 +77,14 @@ func InsertTestUserEmail() {
 	}
 }
 
-func (u *User) Save() error {
+func (u *User) Save(tx *sql.Tx) error {
 	query := `INSERT INTO users (username, password) VALUES (?, ?)`
 
-	result, err := db.DB.Exec(query, u.Username, u.Password)
+	result, err := tx.Exec(query, u.Username, u.Password)
 	if err != nil {
 		return err
 	}
 
-	// mostlikely wont encounter this error
 	lastInsertID, err := result.LastInsertId()
 	if err != nil {
 		return errors.New("unable to retrieve last inserted ID")

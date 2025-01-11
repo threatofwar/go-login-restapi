@@ -1,6 +1,7 @@
 package token
 
 import (
+	"database/sql"
 	"errors"
 	"go-login-restapi/pkg/db/models"
 	"os"
@@ -72,7 +73,7 @@ func ValidateRefreshToken(tokenString string) (*Claims, error) {
 }
 
 // Email verification token
-func GenerateVerificationToken(username, email string) (string, error) {
+func GenerateVerificationToken(tx *sql.Tx, username, email string) (string, error) {
 	// Generate a unique token ID
 	tokenID := uuid.Must(uuid.NewV4()).String()
 
@@ -96,7 +97,16 @@ func GenerateVerificationToken(username, email string) (string, error) {
 	}
 
 	// Store the verification token in the database
-	if err := models.StoreVerificationToken(email, signedToken); err != nil {
+	// if err := models.StoreVerificationToken(email, signedToken); err != nil {
+	// 	return "", err
+	// }
+
+	emailObj := models.Email{
+		Email:             email,
+		VerificationToken: &signedToken,
+	}
+
+	if err := emailObj.Update(tx); err != nil {
 		return "", err
 	}
 

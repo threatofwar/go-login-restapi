@@ -25,12 +25,13 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// check if the username exists.
+	// check username exists
 	if userExists(input.Username) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Username already taken"})
 		return
 	}
 
+	// password hash
 	hashedPassword := hash.HashPassword(input.Password)
 
 	// create user object
@@ -39,32 +40,43 @@ func Register(c *gin.Context) {
 		Password: hashedPassword,
 	}
 
-	// store user object to db
-	if err := user.Save(); err != nil {
+	// db begin
+	tx, err := db.DB.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to start transaction"})
+		return
+	}
+
+	// save object
+	if err := user.Save(tx); err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to register user"})
 		return
 	}
 
-	var err error
-	var verificationToken string
 	var emailVerificationTokens []map[string]string
 
-	// create user object; user->hasMany->emails
+	// user->hasMany->emails loops
 	for _, email := range input.Emails {
 		emailObj := models.Email{
 			UserID: user.ID,
 			Email:  email,
 		}
 
-		// store email
-		if err := emailObj.Save(); err != nil {
+		// save object
+		if err := emailObj.Save(tx); err != nil {
+			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to register email"})
 			return
 		}
 
-		// generate a verification token for the email
-		verificationToken, err = token.GenerateVerificationToken(user.Username, email)
+		// generate token
+		verificationToken, err := token.GenerateVerificationToken(tx, user.Username, email)
+		log.Printf("username: %s", user.Username)
+		log.Printf("email: %s", email)
 		if err != nil {
+			log.Printf("Error generating verification token for email %s: %v", email, err)
+			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate verification token"})
 			return
 		}
@@ -73,6 +85,12 @@ func Register(c *gin.Context) {
 			"email":              email,
 			"verification_token": verificationToken,
 		})
+	}
+
+	// db end
+	if err := tx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
+		return
 	}
 
 	// output
