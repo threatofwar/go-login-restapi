@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"fmt"
 	"go-login-restapi/pkg/db"
 	"log"
@@ -14,9 +15,14 @@ type Email struct {
 	VerificationToken *string `json:"verification_token" db:"verification_token"`
 }
 
+func FindEmailByAddress(email string) (Email, error) {
+	var emailRecord Email
+	err := db.DB.Get(&emailRecord, "SELECT user_id FROM emails WHERE email = ?", email)
+	return emailRecord, err
+}
+
 // UpdateEmailVerificationStatus updates the verification status of the email
 func UpdateEmailVerificationStatus(email string) error {
-	// Updateemail verification status in the database
 	_, err := db.DB.Exec(`
 		UPDATE emails
 		SET verified = TRUE
@@ -48,4 +54,17 @@ func GetEmailByToken(verificationToken, email string) (*Email, error) {
 		return nil, err
 	}
 	return &emailRecord, nil
+}
+
+func (e *Email) Save(tx *sql.Tx) error {
+	query := `INSERT INTO emails (user_id, email) VALUES (?, ?)`
+
+	_, err := tx.Exec(query, e.UserID, e.Email)
+	return err
+}
+
+func (e *Email) Update(tx *sql.Tx) error {
+	query := `UPDATE emails SET verification_token = ? WHERE email = ?`
+	_, err := tx.Exec(query, e.VerificationToken, e.Email)
+	return err
 }

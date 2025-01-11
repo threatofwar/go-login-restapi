@@ -10,7 +10,6 @@ import (
 	"go-login-restapi/pkg/db"
 	"go-login-restapi/pkg/db/models"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 

@@ -4,8 +4,8 @@
 name: Go
 
 on:
-  push:
-    branches: [ "feature/*", "bugfix/*", "hotfix/*", "release/*" ]
+  # push:
+  #   branches: [ "feature/*", "bugfix/*", "hotfix/*", "release/*" ]
   pull_request:
     branches: [ "dev" ]
 
