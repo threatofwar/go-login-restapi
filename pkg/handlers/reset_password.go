@@ -47,7 +47,7 @@ func ResetPasswordHandler(c *gin.Context) {
 		return
 	}
 
-	hashedPassword := hash.HashPassword(req.NewPassword)
+	hashedPassword, err := hash.HashPassword(req.NewPassword)
 
 	_, err = db.DB.Exec("UPDATE users SET password = ? WHERE username = ?", hashedPassword, username)
 	if err != nil {

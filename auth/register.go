@@ -7,6 +7,7 @@ import (
 	"go-login-restapi/hash"
 	"go-login-restapi/pkg/db"
 	"go-login-restapi/pkg/db/models"
+	"go-login-restapi/pkg/services"
 	"go-login-restapi/token"
 
 	"github.com/gin-gonic/gin"
@@ -26,13 +27,25 @@ func Register(c *gin.Context) {
 	}
 
 	// check username exists
-	if userExists(input.Username) {
+	exists, err := services.CheckUserExists(input.Username)
+	if err != nil {
+		log.Println("Error checking if username exists:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	if exists {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Username already taken"})
 		return
 	}
 
 	// password hash
-	hashedPassword := hash.HashPassword(input.Password)
+	hashedPassword, err := hash.HashPassword(input.Password)
+	if err != nil {
+		log.Println("Error hashing password:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
 
 	// create user object
 	user := models.User{
@@ -98,15 +111,4 @@ func Register(c *gin.Context) {
 		"message": "User registered successfully with emails",
 		"emails":  emailVerificationTokens,
 	})
-}
-
-// check if user exists
-func userExists(username string) bool {
-	var count int
-	err := db.DB.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&count)
-	if err != nil {
-		log.Println("Error checking username existence:", err)
-		return false
-	}
-	return count > 0
 }

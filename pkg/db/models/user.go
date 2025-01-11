@@ -18,17 +18,6 @@ type User struct {
 	Emails                 []Email `db:"-"` // maybe not needed
 }
 
-func FindUserByID(userID int) (User, error) {
-	var user User
-	err := db.DB.Get(&user, "SELECT id, username, password FROM users WHERE id = ?", userID)
-	return user, err
-}
-
-func StorePasswordResetToken(userID int, resetToken string) error {
-	_, err := db.DB.Exec("UPDATE users SET password_reset_token = ?, password_reset_token_used = FALSE WHERE id = ?", resetToken, userID)
-	return err
-}
-
 func InsertTestUser() {
 	var count int
 	err := db.DB.Get(&count, "SELECT COUNT(*) FROM users WHERE username = ?", "user")
@@ -37,8 +26,12 @@ func InsertTestUser() {
 	}
 
 	if count == 0 {
-		hashedPassword := hash.HashPassword("123")
-		_, err := db.DB.Exec(`INSERT INTO users (username, password) VALUES (?, ?)`, "user", hashedPassword)
+		hashedPassword, err := hash.HashPassword("123")
+		if err != nil {
+			log.Fatalf("Error hashing password: %v", err)
+		}
+
+		_, err = db.DB.Exec(`INSERT INTO users (username, password) VALUES (?, ?)`, "user", hashedPassword)
 		if err != nil {
 			log.Fatalf("Error inserting test user: %v", err)
 		}
@@ -92,23 +85,4 @@ func (u *User) Save(tx *sql.Tx) error {
 
 	u.ID = int(lastInsertID)
 	return nil
-}
-
-func GetUser(username string, withEmails bool) (*User, error) {
-	var user User
-	err := db.DB.Get(&user, "SELECT id, username, password, password_reset_token, password_reset_token_used FROM users WHERE username = ?", username)
-	if err != nil {
-		return nil, err
-	}
-
-	if withEmails {
-		var emails []Email
-		err = db.DB.Select(&emails, "SELECT id, user_id, email, verified, verification_token FROM emails WHERE user_id = ?", user.ID)
-		if err != nil {
-			return nil, err
-		}
-		user.Emails = emails
-	}
-
-	return &user, nil
 }

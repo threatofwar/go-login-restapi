@@ -20,15 +20,14 @@ const (
 )
 
 // argon2 hash
-func HashPassword(password string) string {
+func HashPassword(password string) (string, error) {
 	salt := make([]byte, saltLength)
 	_, err := rand.Read(salt)
 	if err != nil {
-		log.Fatalf("Error generating random salt: %v", err)
+		return "", fmt.Errorf("error generating random salt: %v", err)
 	}
-
 	hashed := argon2.IDKey([]byte(password), salt, timeCost, memoryCost, parallelism, hashLength)
-	return fmt.Sprintf("%x$%x", salt, hashed)
+	return fmt.Sprintf("%x$%x", salt, hashed), nil
 }
 
 func VerifyPassword(storedPassword, providedPassword string) bool {

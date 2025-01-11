@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"go-login-restapi/pkg/db/models"
+	"go-login-restapi/pkg/services"
 	"go-login-restapi/token"
 	"net/http"
 
@@ -25,7 +26,7 @@ func ForgotPasswordHandler(c *gin.Context) {
 		return
 	}
 
-	user, err := models.FindUserByID(emailRecord.UserID)
+	user, err := services.FindUserByID(emailRecord.UserID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
 		return
@@ -37,7 +38,7 @@ func ForgotPasswordHandler(c *gin.Context) {
 		return
 	}
 
-	if err := models.StorePasswordResetToken(user.ID, resetToken); err != nil {
+	if err := services.StorePasswordResetToken(user.ID, resetToken); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not store reset token"})
 		return
 	}

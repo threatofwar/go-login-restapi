@@ -2,8 +2,8 @@ package auth
 
 import (
 	"go-login-restapi/hash"
-	"go-login-restapi/pkg/db"
 	"go-login-restapi/pkg/db/models"
+	"go-login-restapi/pkg/services"
 	"go-login-restapi/token"
 	"net/http"
 	"os"
@@ -35,18 +35,16 @@ func Login(c *gin.Context) {
 
 	if isEmail {
 		// Login using email address
-		err := db.DB.Get(&user, `
-			SELECT users.id, users.username, users.password 
-			FROM users 
-			JOIN emails ON users.id = emails.user_id 
-			WHERE emails.email = ?`, req.Username)
+		var err error
+		user, err = services.FindUserByEmail(req.Username)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 			return
 		}
 	} else {
 		// Login using username
-		err := db.DB.Get(&user, "SELECT id, username, password FROM users WHERE username = ?", req.Username)
+		var err error
+		user, err = services.FindUserByUsername(req.Username)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 			return
