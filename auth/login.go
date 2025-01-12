@@ -183,7 +183,9 @@ func IsAuthenticated(w http.ResponseWriter, r *http.Request) {
 	// Get the token from cookies
 	cookie, err := r.Cookie("access_token")
 	if err != nil || cookie.Value == "" {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"authenticated": false}`))
 		return
 	}
 

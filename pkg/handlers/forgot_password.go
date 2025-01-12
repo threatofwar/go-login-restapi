@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"go-login-restapi/pkg/db/models"
 	"go-login-restapi/pkg/services"
 	"go-login-restapi/token"
 	"net/http"
@@ -20,7 +19,7 @@ func ForgotPasswordHandler(c *gin.Context) {
 		return
 	}
 
-	emailRecord, err := models.FindEmailByAddress(req.Email)
+	emailRecord, err := services.FindEmailByAddress(req.Email)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Email not found or invalid"})
 		return

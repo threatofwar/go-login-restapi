@@ -49,6 +49,7 @@ func main() {
 	})
 	// authentication route
 	router.POST("/login", auth.Login)
+	router.POST("/logout", auth.Logout)
 	router.POST("/refresh-token", auth.RefreshToken)
 	router.GET("/authenticated", func(c *gin.Context) {
 		auth.IsAuthenticated(c.Writer, c.Request)
