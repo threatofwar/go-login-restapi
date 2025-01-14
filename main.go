@@ -6,9 +6,10 @@ import (
 	"strings"
 
 	"go-login-restapi/auth"
-	"go-login-restapi/handlers"
 	"go-login-restapi/pkg/db"
 	"go-login-restapi/pkg/db/models"
+	"go-login-restapi/pkg/handlers"
+	"go-login-restapi/pkg/services"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -48,6 +49,7 @@ func main() {
 	})
 	// authentication route
 	router.POST("/login", auth.Login)
+	router.POST("/logout", auth.Logout)
 	router.POST("/refresh-token", auth.RefreshToken)
 	router.GET("/authenticated", func(c *gin.Context) {
 		auth.IsAuthenticated(c.Writer, c.Request)
@@ -71,7 +73,7 @@ func main() {
 			return
 		}
 
-		user, err := models.GetUser(username.(string), true)
+		user, err := services.GetUser(username.(string), true)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not fetch user profile"})
 			return

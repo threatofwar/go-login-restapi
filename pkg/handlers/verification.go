@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"go-login-restapi/pkg/db"
-	"go-login-restapi/pkg/db/models"
+	"go-login-restapi/pkg/services"
 	"go-login-restapi/token"
 	"net/http"
 
@@ -57,7 +57,7 @@ func VerifyEmailHandler(c *gin.Context) {
 		return
 	}
 
-	email, err := models.GetEmailByToken(request.Token, claims.Email)
+	email, err := services.GetEmailByToken(request.Token, claims.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve email with token"})
 		return
@@ -73,7 +73,7 @@ func VerifyEmailHandler(c *gin.Context) {
 		return
 	}
 
-	err = models.UpdateEmailVerificationStatus(claims.Email)
+	err = services.UpdateEmailVerificationStatus(claims.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update email verification status"})
 		return
