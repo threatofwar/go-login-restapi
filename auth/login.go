@@ -105,8 +105,14 @@ func Login(c *gin.Context) {
 			SameSite: http.SameSiteNoneMode,
 		})
 
+		sessionData := gin.H{
+			"userId":   user.ID,
+			"username": user.Username,
+		}
+
 		c.JSON(http.StatusOK, gin.H{
-			"message": "Logged in successfully!",
+			"message":     "Logged in successfully!",
+			"sessionData": sessionData,
 		})
 	}
 }
