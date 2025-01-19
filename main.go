@@ -59,6 +59,23 @@ func main() {
 	router.POST("/register", auth.Register)
 	router.POST("/generate-verification-token", handlers.GenerateVerificationTokenHandler)
 	router.POST("/verify-email", handlers.VerifyEmailHandler)
+	router.GET("/check-username", func(c *gin.Context) {
+		username := c.Query("username")
+		if username == "" {
+			c.JSON(400, gin.H{"error": "Username is required"})
+			return
+		}
+
+		// Check if username exists in the database
+		exists, err := services.CheckUserExists(username)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Internal Server Error"})
+			return
+		}
+
+		// Respond with availability status
+		c.JSON(200, gin.H{"available": !exists})
+	})
 
 	// password reset routes
 	router.POST("/forgot-password", handlers.ForgotPasswordHandler)
